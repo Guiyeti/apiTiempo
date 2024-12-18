@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta de Clima</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            transition: background-color 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Consulta de Clima</h1>
+        <div class="form-group">
+            <label for="provinciaSelect">Provincia:</label>
+            <select class="form-control" id="provinciaSelect" onchange="cargarMunicipios()">
+                <option value="">Selecciona una provincia</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="municipioSelect">Municipio:</label>
+            <select class="form-control" id="municipioSelect">
+                <option value="">Selecciona un municipio</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" onclick="consultarClima()">Ver Clima</button>
+        <div id="climaInfo" class="mt-3"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+     
+        function cargarProvincias() {
+            fetch(`https://www.el-tiempo.net/api/json/v2/provincias`)
+                .then(response => response.json())
+                .then(data => {
+                    const provinciaSelect = document.getElementById('provinciaSelect');
+                    data.provincias.forEach(provincia => {
+                        provinciaSelect.innerHTML += `<option value="${provincia.CODPROV}">${provincia.NOMBRE_PROVINCIA}</option>`;
+                    });
+                })
+                .catch(error => console.error('Error cargando provincias:', error));
+        }
+
+        function cargarMunicipios() {
+            const provinciaCodigo = document.getElementById('provinciaSelect').value;
+            const municipioSelect = document.getElementById('municipioSelect');
+            municipioSelect.innerHTML = '<option value="">Selecciona un municipio</option>';
+            if (provinciaCodigo) {
+                fetch(`https://www.el-tiempo.net/api/json/v2/provincias/${provinciaCodigo}/municipios`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.municipios.forEach(municipio => {
+                            municipioSelect.innerHTML += `<option value="${municipio.CODIGOINE}">${municipio.NOMBRE}</option>`;
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error cargando municipios:', error);
+                        alert('Ocurrió un error al cargar los municipios. Por favor, inténtalo de nuevo.');
+                    });
+            }
+        }
+       
+        function consultarClima() {
+            var municipioSelect = document.getElementById('municipioSelect').value;
+            const provinciaCodigo = document.getElementById('provinciaSelect').value;
+            municipioSelect=municipioSelect.slice(0,5);
+            
+            if (!municipioSelect || !provinciaCodigo) {
+                console.error('Error: Debes seleccionar una provincia y un municipio.');
+                alert('Debes seleccionar una provincia y un municipio antes de consultar el clima.');
+                return;
+            }
+            console.log(provinciaCodigo);
+            console.log(municipioSelect);
+
+            fetch(`https://www.el-tiempo.net/api/json/v2/provincias/${provinciaCodigo}/municipios/${municipioSelect}`)
+                .then(response => response.json())
+                .then(data => {
+
+                    //const temperaturaMaxima = parseInt(data.temperatura.maxima);
+                    //const temperaturaMinima = parseInt(data.temperatura.minima);
+                    const temperaturaMedia = data.temperatura_actual;//(temperaturaMaxima + temperaturaMinima) / 2;
+                    console.log(temperaturaMedia);
+
+                    let colorFondo;
+                    if (temperaturaMedia < 0) {
+                        colorFondo = 'white';
+                    } else if (temperaturaMedia >= 0 && temperaturaMedia <= 15) {
+                        colorFondo = 'blue';
+                    } else if (temperaturaMedia > 15 && temperaturaMedia <= 30) {
+                        colorFondo = 'orange';
+                    } else {
+                        colorFondo = 'red';
+                    }
+                    document.body.style.backgroundColor = colorFondo;
+                    document.getElementById('climaInfo').innerHTML = `<p>Temperatura media: ${temperaturaMedia} °C</p>`;
+                })
+                /*
+                .catch(error => {
+                   console.error('Error consultando el clima:', error);
+                    alert('Ocurrió un error al consultar el clima. Por favor, inténtalo de nuevo.');
+                });
+        
+        */
+
+    }
+        cargarProvincias();
+    </script>
+</body>
+</html>
+
